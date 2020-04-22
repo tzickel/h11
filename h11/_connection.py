@@ -4,7 +4,10 @@
 from ._events import *  # Import all event types
 from ._headers import get_comma_header, has_expect_100_continue, set_comma_header
 from ._readers import READERS
-from ._receivebuffer import ReceiveBuffer
+try:
+    from ._recievebuffer_chunkedbuffer import ReceiveBuffer
+except ImportError:
+    from ._receivebuffer import ReceiveBuffer
 from ._state import *  # Import all state sentinels
 from ._state import _SWITCH_CONNECT, _SWITCH_UPGRADE, ConnectionState
 from ._util import (  # Import the internal things we need

@@ -33,4 +33,8 @@ setup(
         "Topic :: Internet :: WWW/HTTP",
         "Topic :: System :: Networking",
     ],
+    # TODO Make this an optional extras_require
+    install_requires=[
+        "chunkedbuffer @ git+git://github.com/tzickel/chunkedbuffer@master#egg=chunkedbuffer"
+    ],
 )

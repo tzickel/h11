@@ -1,4 +1,7 @@
-from .._receivebuffer import ReceiveBuffer
+try:
+    from .._recievebuffer_chunkedbuffer import ReceiveBuffer
+except ImportError:
+    from .._receivebuffer import ReceiveBuffer
 
 
 def test_receivebuffer():

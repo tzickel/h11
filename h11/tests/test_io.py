@@ -9,7 +9,10 @@ from .._readers import (
     Http10Reader,
     READERS,
 )
-from .._receivebuffer import ReceiveBuffer
+try:
+    from .._recievebuffer_chunkedbuffer import ReceiveBuffer
+except ImportError:
+    from .._receivebuffer import ReceiveBuffer
 from .._state import *
 from .._util import LocalProtocolError
 from .._writers import (

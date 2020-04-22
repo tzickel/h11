@@ -356,6 +356,16 @@ class Connection(object):
         else:
             self._receive_buffer_closed = True
 
+    def get_chunk(self, sizehint=-1):
+        if self._receive_buffer_closed:
+            raise RuntimeError("received close, then received more data?")
+        return self._receive_buffer.get_chunk(sizehint)
+
+    def chunk_written(self, nbytes):
+        self._receive_buffer.chunk_written(nbytes)
+        if nbytes == 0:
+            self._receive_buffer_closed = True
+
     def _extract_next_receive_event(self):
         state = self.their_state
         # We don't pause immediately when they enter DONE, because even in

@@ -18,6 +18,8 @@
 
 import re
 
+from chunkedbuffer import Buffer
+
 from ._abnf import chunk_header, header_field, request_line, status_line
 from ._events import *
 from ._state import *
@@ -43,7 +45,11 @@ def _obsolete_line_fold(lines):
             if not isinstance(last, bytearray):
                 last = bytearray(last)
             last += b" "
-            last += line[match.end() :]
+            if isinstance(line, Buffer):
+                line.skip(match.end())
+                last += line
+            else:
+                last += line[match.end():]
         else:
             if last is not None:
                 yield last

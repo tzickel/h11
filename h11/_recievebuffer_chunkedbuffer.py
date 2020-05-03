@@ -23,6 +23,8 @@ __all__ = ["ReceiveBuffer"]
 class ReceiveBuffer(object):
     def __init__(self):
         self._buffer = Buffer()
+        self._looked_for = None
+        self._looked_at = 0
 
     def __bool__(self):
         return bool(len(self))
@@ -51,6 +53,7 @@ class ReceiveBuffer(object):
     def chunk_written(self, nbytes):
         self._buffer.chunk_written(nbytes)
 
+    # TODO ChunkedReader uses this function to skip some data _bytes_to_discard). For backward compatability with _receivebuffer I haven't changed this yet, but we have a skip() method in self._buffer we can use instead
     def maybe_extract_at_most(self, count):
         out = self._buffer.take(count)
         if not out:
@@ -60,19 +63,41 @@ class ReceiveBuffer(object):
     def maybe_extract_until_next(self, needle):
         # Returns extracted bytes on success (advancing offset), or None on
         # failure
-        return self._buffer.takeuntil(needle, True)
+        if needle == b'\r\n':
+            return self._buffer.takeline(True)
+        elif needle == b'\r\n\r\n':
+            if self._looked_for == needle:
+                search_start = max(0, self._looked_at - len(needle) + 1)
+            else:
+                search_start = 0
+            offset = self._buffer.find(needle, search_start)
+            if offset == -1:
+                offset = self._buffer.find(b'\n\n', search_start)
+                if offset == -1:
+                    self._looked_at = len(self._buffer)
+                    self._looked_for = needle
+                    return None
+                else:
+                    return self._buffer.take(offset + 2)
+            else:
+                return self._buffer.take(offset + 4)
+        else:
+            return self._buffer.takeuntil(needle, True)
 
     # HTTP/1.1 has a number of constructs where you keep reading lines until
     # you see a blank one. This does that, and then returns the lines.
     def maybe_extract_lines(self):
-        if self._buffer.peek(2) == b'\r\n':
+        if self._buffer.peek(1) == b'\n':
+            self._buffer.skip(1)
+            return []
+        elif self._buffer.peek(2) == b'\r\n':
             self._buffer.skip(2)
             return []
         else:
             data = self.maybe_extract_until_next(b"\r\n\r\n")
             if data is None:
                 return None
-            lines = data.split(b"\r\n")
-            assert lines[-2] == lines[-1] == b""
-            del lines[-2:]
+            lines = data.splitlines()
+            assert lines[-1] == b''
+            del lines[-1:]
             return lines

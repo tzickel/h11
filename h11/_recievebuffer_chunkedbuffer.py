@@ -24,9 +24,13 @@ class ReceiveBuffer(object):
     def __init__(self):
         self._buffer = Buffer()
         self._lines = []
+        self._lines_len = 0
 
     def __bool__(self):
-        return bool(len(self))
+        if self._lines_len != 0:
+            return True
+        else:
+            return bool(len(self))
 
     # for @property unprocessed_data
     def __bytes__(self):
@@ -37,7 +41,7 @@ class ReceiveBuffer(object):
         __nonzero__ = __bool__
 
     def __len__(self):
-        return len(self._buffer)
+        return len(self._buffer) + self._lines_len
 
     def compress(self):
         pass
@@ -75,7 +79,9 @@ class ReceiveBuffer(object):
                 return []
             if not line:
                 tmp = self._lines
+                self._lines_len = 0
                 self._lines = []
                 return tmp
             else:
+                self._lines_len += len(line)
                 self._lines.append(line)
